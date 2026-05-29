@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SmartCityFix — Code Walkthrough Presentation</title>
+<style>
+  :root {
+    --primary: #1976D2;
+    --accent: #F57C00;
+    --success: #4CAF50;
+    --dark: #263238;
+    --bg: #F5F7FA;
+    --card: #ffffff;
+    --code-bg: #1e293b;
+    --code-fg: #e2e8f0;
+    --muted: #64748b;
+    --border: #e2e8f0;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--dark);
+    line-height: 1.6;
+  }
+
+  /* ── Slide deck shell ───────────────────────────────── */
+  .deck { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  .deck-header {
+    background: linear-gradient(135deg, var(--primary) 0%, #0d47a1 100%);
+    color: #fff; padding: 48px 40px; border-radius: 16px;
+    margin-bottom: 32px; box-shadow: 0 8px 24px rgba(25,118,210,0.25);
+  }
+  .deck-header h1 { margin: 0 0 8px; font-size: 2.4rem; letter-spacing: -0.02em; }
+  .deck-header p { margin: 0; opacity: 0.92; font-size: 1.1rem; }
+  .deck-header .meta {
+    display: inline-flex; gap: 8px; margin-top: 18px;
+    font-size: 0.85rem; opacity: 0.95;
+  }
+  .deck-header .meta span {
+    background: rgba(255,255,255,0.15); padding: 4px 12px;
+    border-radius: 999px;
+  }
+
+  .toc {
+    background: var(--card); border-radius: 12px; padding: 24px 28px;
+    margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border: 1px solid var(--border);
+  }
+  .toc h3 { margin: 0 0 12px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .toc ol { margin: 0; padding-left: 22px; columns: 2; column-gap: 32px; }
+  .toc li { margin-bottom: 6px; break-inside: avoid; }
+  .toc a { color: var(--primary); text-decoration: none; font-weight: 500; }
+  .toc a:hover { text-decoration: underline; }
+
+  .slide {
+    background: var(--card); border-radius: 12px; padding: 36px 40px;
+    margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border: 1px solid var(--border);
+  }
+  .slide h2 {
+    margin: 0 0 6px; font-size: 1.7rem; color: var(--primary);
+    letter-spacing: -0.01em;
+  }
+  .slide .subtitle { color: var(--muted); margin: 0 0 24px; font-size: 1rem; }
+  .slide h3 { margin: 24px 0 10px; font-size: 1.15rem; color: var(--dark); }
+  .slide h4 { margin: 18px 0 8px; font-size: 1rem; color: var(--dark); }
+  .slide p { margin: 8px 0; }
+  .slide ul { margin: 8px 0; padding-left: 22px; }
+  .slide li { margin-bottom: 4px; }
+  .slide code:not(pre code) {
+    background: #eef2f7; padding: 2px 6px; border-radius: 4px;
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.9em;
+    color: #d63384;
+  }
+
+  /* ── Code blocks ─────────────────────────────────────── */
+  pre {
+    background: var(--code-bg); color: var(--code-fg);
+    padding: 18px 20px; border-radius: 8px; overflow-x: auto;
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.85rem;
+    line-height: 1.55; margin: 12px 0;
+    border: 1px solid #334155;
+  }
+  pre .kw { color: #c084fc; }      /* keywords */
+  pre .str { color: #86efac; }     /* strings */
+  pre .com { color: #64748b; font-style: italic; } /* comments */
+  pre .fn { color: #fbbf24; }      /* function names */
+  pre .num { color: #f87171; }     /* numbers */
+  pre .var { color: #93c5fd; }     /* variables */
+  pre .tag { color: #fb7185; }     /* JSX tags */
+  pre .attr { color: #fbbf24; }    /* JSX attrs */
+
+  .file-tag {
+    display: inline-block; font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem; color: #fff; background: #334155;
+    padding: 3px 10px; border-radius: 4px 4px 0 0;
+    margin-bottom: -1px;
+  }
+
+  /* ── Tables ──────────────────────────────────────────── */
+  table {
+    width: 100%; border-collapse: collapse; margin: 14px 0;
+    font-size: 0.92rem;
+  }
+  th, td {
+    padding: 10px 14px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    background: #f8fafc; color: var(--dark); font-weight: 600;
+    font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  tr:hover td { background: #fafbfc; }
+
+  /* ── Callouts ────────────────────────────────────────── */
+  .callout {
+    border-left: 4px solid var(--primary); background: #eff6ff;
+    padding: 14px 18px; border-radius: 4px; margin: 16px 0;
+  }
+  .callout.warn { border-left-color: var(--accent); background: #fff7ed; }
+  .callout.success { border-left-color: var(--success); background: #f0fdf4; }
+  .callout strong { color: var(--dark); }
+
+  /* ── Diagram boxes ──────────────────────────────────── */
+  .flow {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    margin: 16px 0; padding: 18px; background: #f8fafc;
+    border-radius: 8px; border: 1px dashed #cbd5e1;
+  }
+  .flow .step {
+    background: var(--card); padding: 10px 16px; border-radius: 6px;
+    border: 1px solid var(--border); font-size: 0.9rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .flow .arrow { color: var(--muted); font-size: 1.2rem; }
+
+  .grid-2 {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+    margin: 16px 0;
+  }
+  .grid-2 .box {
+    background: #f8fafc; padding: 16px 18px; border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .grid-2 .box h4 { margin-top: 0; color: var(--primary); }
+
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .badge.frontend { background: #dbeafe; color: #1e40af; }
+  .badge.backend { background: #dcfce7; color: #166534; }
+  .badge.shared { background: #fef3c7; color: #92400e; }
+
+  @media (max-width: 768px) {
+    .toc ol { columns: 1; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .deck-header { padding: 32px 24px; }
+    .slide { padding: 24px 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- ── Header ──────────────────────────────────────── -->
+  <header class="deck-header">
+    <h1>SmartCityFix — How the Code Works</h1>
+    <p>A guided walkthrough of the city issue reporter: from a citizen's click on the map all the way down to a row in PostgreSQL.</p>
+    <div class="meta">
+      <span>React 18 + Vite</span>
+      <span>Express.js</span>
+      <span>PostgreSQL + Knex</span>
+      <span>Google Maps + Cloudinary</span>
+    </div>
+  </header>
+
+  <!-- ── Table of contents ───────────────────────────── -->
+  <nav class="toc">
+    <h3>Walkthrough</h3>
+    <ol>
+      <li><a href="#overview">High-level architecture</a></li>
+      <li><a href="#stack">Tech stack &amp; project layout</a></li>
+      <li><a href="#data-model">Data model (6 tables)</a></li>
+      <li><a href="#backend-bootstrap">Backend bootstrap (app.js)</a></li>
+      <li><a href="#auth">Auth: cookies, JWT, middleware</a></li>
+      <li><a href="#layered">Layered backend: routes → services → models</a></li>
+      <li><a href="#issues-flow">The "Report an issue" pipeline</a></li>
+      <li><a href="#admin-flow">Admin status changes &amp; notifications</a></li>
+      <li><a href="#frontend-shell">Frontend shell (App.jsx, contexts)</a></li>
+      <li><a href="#map">Map &amp; markers</a></li>
+      <li><a href="#photo-upload">Photo upload via Cloudinary</a></li>
+      <li><a href="#statistics">Admin statistics aggregation</a></li>
+      <li><a href="#key-components">Most useful components to read first</a></li>
+      <li><a href="#requests">End-to-end request map</a></li>
+    </ol>
+  </nav>
+
+  <!-- ── Slide 1: Architecture ───────────────────────── -->
+  <section id="overview" class="slide">
+    <h2>1 · High-level architecture</h2>
+    <p class="subtitle">Three tiers, one workflow: citizens report, admins resolve.</p>
+
+    <div class="flow">
+      <div class="step"><strong>Browser</strong><br/>React + Vite SPA</div>
+      <span class="arrow">→</span>
+      <div class="step"><strong>Express API</strong><br/>:3001 /api/*</div>
+      <span class="arrow">→</span>
+      <div class="step"><strong>PostgreSQL</strong><br/>via Knex query builder</div>
+    </div>
+    <div class="flow">
+      <div class="step"><strong>Browser</strong></div>
+      <span class="arrow">↘</span>
+      <div class="step"><strong>Cloudinary</strong><br/>direct upload, returns secure URL</div>
+      <span class="arrow">↗</span>
+      <div class="step"><strong>Express API</strong><br/>stores URL only</div>
+    </div>
+    <div class="flow">
+      <div class="step"><strong>Express API</strong></div>
+      <span class="arrow">→</span>
+      <div class="step"><strong>Google Geocoding API</strong><br/>reverse-geocode coords → address</div>
+    </div>
+
+    <div class="callout">
+      <strong>Why this shape?</strong> Photos never travel through Express — the React client uploads them <em>directly</em> to Cloudinary using an unsigned preset and only sends the resulting URL string to the backend. That keeps Node out of the binary-streaming business and dramatically reduces server load.
+    </div>
+  </section>
+
+  <!-- ── Slide 2: Stack & layout ─────────────────────── -->
+  <section id="stack" class="slide">
+    <h2>2 · Tech stack &amp; project layout</h2>
+    <p class="subtitle">Two completely independent npm projects under one repo.</p>
+
+    <div class="grid-2">
+      <div class="box">
+        <h4><span class="badge frontend">Frontend</span> <code>/frontend</code></h4>
+        <ul>
+          <li>React 18 + Vite (port <code>5173</code>)</li>
+          <li>React Router v6 for client-side routing</li>
+          <li>Tailwind CSS — brand colors in <code>tailwind.config.js</code></li>
+          <li><code>@react-google-maps/api</code> for the map</li>
+          <li>Recharts for admin analytics</li>
+          <li>Axios with <code>withCredentials: true</code> so the JWT cookie travels</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h4><span class="badge backend">Backend</span> <code>/backend</code></h4>
+        <ul>
+          <li>Express.js (port <code>3001</code>)</li>
+          <li>Knex.js — query builder + migrations + seeds</li>
+          <li>PostgreSQL 15+</li>
+          <li><code>jsonwebtoken</code> + <code>bcrypt</code> for auth</li>
+          <li><code>express-validator</code> for request validation</li>
+          <li><code>cookie-parser</code> for httpOnly cookies</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Tree (highlights)</h3>
+<pre><span class="com">backend/src/</span>
+  config/      <span class="com">// env.js validates env vars; database.js exports a Knex instance</span>
+  middleware/  <span class="com">// auth.js, authorize.js, validate.js, errorHandler.js</span>
+  models/      <span class="com">// thin DB-access modules (user, issue, comment, …)</span>
+  services/    <span class="com">// business logic (authService, issueService, adminService)</span>
+  routes/      <span class="com">// Express routers wired into /api/* in app.js</span>
+  utils/       <span class="com">// reverseGeocode()</span>
+
+<span class="com">frontend/src/</span>
+  components/  <span class="com">// Map, IssueMarker, PhotoUpload, LocationPicker, Navbar, …</span>
+  pages/       <span class="com">// HomePage, MapPage, NewIssuePage, IssueDetailPage, admin/*</span>
+  context/     <span class="com">// AuthContext, NotificationContext (global state)</span>
+  services/    <span class="com">// api.js (axios), issueService, authService, cloudinaryService</span></pre>
+  </section>
+
+  <!-- ── Slide 3: Data model ─────────────────────────── -->
+  <section id="data-model" class="slide">
+    <h2>3 · Data model — six tables</h2>
+    <p class="subtitle">Everything in the app revolves around the <code>issues</code> table.</p>
+
+    <div class="flow">
+      <div class="step"><strong>users</strong></div>
+      <span class="arrow">1→N</span>
+      <div class="step"><strong>issues</strong></div>
+      <span class="arrow">1→N</span>
+      <div class="step"><strong>status_history</strong></div>
+    </div>
+    <div class="flow">
+      <div class="step"><strong>issues</strong></div>
+      <span class="arrow">1→N</span>
+      <div class="step"><strong>comments</strong></div>
+      <span class="arrow"></span>
+      <div class="step"><strong>users</strong></div>
+      <span class="arrow">1→N</span>
+      <div class="step"><strong>notifications</strong></div>
+    </div>
+
+    <span class="file-tag">backend/migrations/20260504100002_create_issues.js</span>
+<pre><span class="kw">exports</span>.up = <span class="kw">function</span>(knex) {
+  <span class="kw">return</span> knex.schema.<span class="fn">createTable</span>(<span class="str">'issues'</span>, table =&gt; {
+    table.<span class="fn">uuid</span>(<span class="str">'id'</span>).<span class="fn">primary</span>().<span class="fn">defaultTo</span>(knex.fn.<span class="fn">uuid</span>());
+    table.<span class="fn">string</span>(<span class="str">'title'</span>, <span class="num">200</span>).<span class="fn">notNullable</span>();
+    table.<span class="fn">text</span>(<span class="str">'description'</span>).<span class="fn">notNullable</span>();
+    table.<span class="fn">integer</span>(<span class="str">'category_id'</span>).<span class="fn">references</span>(<span class="str">'id'</span>).<span class="fn">inTable</span>(<span class="str">'categories'</span>);
+    table.<span class="fn">enum</span>(<span class="str">'status'</span>, [<span class="str">'reported'</span>, <span class="str">'in_progress'</span>, <span class="str">'resolved'</span>, <span class="str">'rejected'</span>])
+      .<span class="fn">defaultTo</span>(<span class="str">'reported'</span>);
+    table.<span class="fn">decimal</span>(<span class="str">'latitude'</span>,  <span class="num">10</span>, <span class="num">8</span>).<span class="fn">notNullable</span>();
+    table.<span class="fn">decimal</span>(<span class="str">'longitude'</span>, <span class="num">11</span>, <span class="num">8</span>).<span class="fn">notNullable</span>();
+    table.<span class="fn">string</span>(<span class="str">'address'</span>, <span class="num">300</span>);
+    table.<span class="fn">uuid</span>(<span class="str">'user_id'</span>).<span class="fn">references</span>(<span class="str">'id'</span>).<span class="fn">inTable</span>(<span class="str">'users'</span>);
+    <span class="com">// + photo_urls (jsonb), created_at, updated_at, indexes</span>
+  });
+};</pre>
+
+    <h3>Status state machine</h3>
+    <div class="flow">
+      <div class="step">reported</div>
+      <span class="arrow">→</span>
+      <div class="step">in_progress</div>
+      <span class="arrow">→</span>
+      <div class="step">resolved</div>
+    </div>
+    <div class="flow">
+      <div class="step">reported / in_progress</div>
+      <span class="arrow">→</span>
+      <div class="step">rejected</div>
+    </div>
+  </section>
+
+  <!-- ── Slide 4: Backend bootstrap ──────────────────── -->
+  <section id="backend-bootstrap" class="slide">
+    <h2>4 · Backend bootstrap — <code>app.js</code></h2>
+    <p class="subtitle">Where every request enters and gets routed.</p>
+
+    <span class="file-tag">backend/src/app.js</span>
+<pre><span class="kw">const</span> express      = <span class="fn">require</span>(<span class="str">'express'</span>);
+<span class="kw">const</span> cors         = <span class="fn">require</span>(<span class="str">'cors'</span>);
+<span class="kw">const</span> cookieParser = <span class="fn">require</span>(<span class="str">'cookie-parser'</span>);
+<span class="kw">const</span> errorHandler = <span class="fn">require</span>(<span class="str">'./middleware/errorHandler'</span>);
+
+<span class="kw">const</span> app = <span class="fn">express</span>();
+
+app.<span class="fn">use</span>(<span class="fn">cors</span>({
+  origin: process.env.CORS_ORIGIN || <span class="str">'http://localhost:5173'</span>,
+  credentials: <span class="kw">true</span>,                 <span class="com">// ← must be true so the JWT cookie crosses origins</span>
+}));
+app.<span class="fn">use</span>(<span class="fn">cookieParser</span>());
+app.<span class="fn">use</span>(express.<span class="fn">json</span>({ limit: <span class="str">'10mb'</span> }));
+
+<span class="com">// Routes</span>
+app.<span class="fn">use</span>(<span class="str">'/api/auth'</span>,             <span class="fn">require</span>(<span class="str">'./routes/auth'</span>));
+app.<span class="fn">use</span>(<span class="str">'/api/issues'</span>,           <span class="fn">require</span>(<span class="str">'./routes/issues'</span>));
+app.<span class="fn">use</span>(<span class="str">'/api/categories'</span>,       <span class="fn">require</span>(<span class="str">'./routes/categories'</span>));
+app.<span class="fn">use</span>(<span class="str">'/api/admin/statistics'</span>, <span class="fn">require</span>(<span class="str">'./routes/statistics'</span>));
+app.<span class="fn">use</span>(<span class="str">'/api/admin'</span>,            <span class="fn">require</span>(<span class="str">'./routes/admin'</span>));
+app.<span class="fn">use</span>(<span class="str">'/api/users'</span>,            <span class="fn">require</span>(<span class="str">'./routes/users'</span>));
+app.<span class="fn">use</span>(<span class="str">'/api'</span>,                  <span class="fn">require</span>(<span class="str">'./routes/comments'</span>));
+app.<span class="fn">use</span>(<span class="str">'/api/notifications'</span>,    <span class="fn">require</span>(<span class="str">'./routes/notifications'</span>));
+
+app.<span class="fn">use</span>(errorHandler);   <span class="com">// must be last so it catches errors from any route</span>
+<span class="kw">module</span>.exports = app;</pre>
+
+    <div class="callout warn">
+      <strong>Order matters.</strong> <code>/api/admin/statistics</code> is mounted <em>before</em> <code>/api/admin</code> — otherwise the broader <code>/api/admin</code> router would swallow the request first. The same trick is used in <code>routes/issues.js</code>, where <code>/stats/public</code> is declared before <code>/:id</code>.
+    </div>
+  </section>
+
+  <!-- ── Slide 5: Auth ───────────────────────────────── -->
+  <section id="auth" class="slide">
+    <h2>5 · Authentication — JWT in an httpOnly cookie</h2>
+    <p class="subtitle">No tokens in localStorage. The browser carries the cookie automatically.</p>
+
+    <h3>Login produces a signed JWT</h3>
+    <span class="file-tag">backend/src/services/authService.js</span>
+<pre><span class="kw">async function</span> <span class="fn">login</span>(email, password) {
+  <span class="kw">const</span> user = <span class="kw">await</span> User.<span class="fn">findByEmail</span>(email);
+  <span class="kw">if</span> (!user) <span class="kw">throw</span> { status: <span class="num">401</span>, message: <span class="str">'Invalid email or password'</span> };
+
+  <span class="kw">const</span> isMatch = <span class="kw">await</span> bcrypt.<span class="fn">compare</span>(password, user.password_hash);
+  <span class="kw">if</span> (!isMatch) <span class="kw">throw</span> { status: <span class="num">401</span>, message: <span class="str">'Invalid email or password'</span> };
+
+  <span class="kw">const</span> token = jwt.<span class="fn">sign</span>(
+    { id: user.id, email: user.email, role: user.role },
+    config.jwtSecret,
+    { expiresIn: config.jwtExpiresIn }   <span class="com">// default 7d</span>
+  );
+  <span class="kw">return</span> { user: <span class="fn">sanitizeUser</span>(user), token };
+}</pre>
+
+    <h3>Route writes it as an httpOnly cookie</h3>
+    <span class="file-tag">backend/src/routes/auth.js</span>
+<pre><span class="kw">const</span> COOKIE_OPTIONS = {
+  httpOnly: <span class="kw">true</span>,
+  secure: process.env.NODE_ENV === <span class="str">'production'</span>,
+  sameSite: <span class="str">'lax'</span>,
+  maxAge: <span class="num">7</span> * <span class="num">24</span> * <span class="num">60</span> * <span class="num">60</span> * <span class="num">1000</span>,
+};
+
+router.<span class="fn">post</span>(<span class="str">'/login'</span>, ..., <span class="kw">async</span> (req, res) =&gt; {
+  <span class="kw">const</span> { user, token } = <span class="kw">await</span> authService.<span class="fn">login</span>(email, password);
+  res.<span class="fn">cookie</span>(<span class="str">'token'</span>, token, COOKIE_OPTIONS);
+  res.<span class="fn">status</span>(<span class="num">200</span>).<span class="fn">json</span>({ user });
+});</pre>
+
+    <h3>Two middleware flavors</h3>
+    <span class="file-tag">backend/src/middleware/auth.js</span>
+<pre><span class="kw">function</span> <span class="fn">authenticate</span>(req, res, next) {        <span class="com">// hard gate: 401 if no/invalid token</span>
+  <span class="kw">const</span> token = req.cookies.token;
+  <span class="kw">if</span> (!token) <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">401</span>).<span class="fn">json</span>({ error: { code: <span class="str">'UNAUTHORIZED'</span> } });
+  <span class="kw">try</span> {
+    req.user = jwt.<span class="fn">verify</span>(token, config.jwtSecret);
+    <span class="fn">next</span>();
+  } <span class="kw">catch</span> { res.<span class="fn">status</span>(<span class="num">401</span>).<span class="fn">json</span>({ error: { code: <span class="str">'UNAUTHORIZED'</span> } }); }
+}
+
+<span class="kw">function</span> <span class="fn">optionalAuth</span>(req, res, next) {       <span class="com">// soft: attach user if present, otherwise pass</span>
+  <span class="kw">const</span> token = req.cookies.token;
+  <span class="kw">if</span> (token) { <span class="kw">try</span> { req.user = jwt.<span class="fn">verify</span>(token, config.jwtSecret); } <span class="kw">catch</span> {} }
+  <span class="fn">next</span>();
+}</pre>
+
+    <h3>Role gate for admin endpoints</h3>
+    <span class="file-tag">backend/src/middleware/authorize.js · routes/admin.js</span>
+<pre><span class="kw">function</span> <span class="fn">requireRole</span>(...roles) {
+  <span class="kw">return</span> (req, res, next) =&gt; {
+    <span class="kw">if</span> (!req.user || !roles.<span class="fn">includes</span>(req.user.role))
+      <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">403</span>).<span class="fn">json</span>({ error: { code: <span class="str">'FORBIDDEN'</span> } });
+    <span class="fn">next</span>();
+  };
+}
+
+<span class="com">// Every admin endpoint runs through both gates:</span>
+router.<span class="fn">use</span>(authenticate, <span class="fn">requireRole</span>(<span class="str">'admin'</span>));</pre>
+
+    <div class="callout success">
+      <strong>Why httpOnly cookies?</strong> JS can't read them, so XSS can't steal the token. The cost is enabling CORS <code>credentials: true</code> + axios <code>withCredentials: true</code> so they actually travel.
+    </div>
+  </section>
+
+  <!-- ── Slide 6: Layered backend ────────────────────── -->
+  <section id="layered" class="slide">
+    <h2>6 · Layered backend: routes → services → models</h2>
+    <p class="subtitle">Each layer has exactly one job.</p>
+
+    <table>
+      <thead><tr><th>Layer</th><th>Responsibility</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><strong>routes/</strong></td><td>HTTP shape: validation, status codes, cookies</td><td><code>routes/issues.js</code></td></tr>
+        <tr><td><strong>services/</strong></td><td>Business logic, multi-table operations, side effects</td><td><code>services/adminService.js</code></td></tr>
+        <tr><td><strong>models/</strong></td><td>Direct DB access, joins, projections</td><td><code>models/issue.js</code></td></tr>
+        <tr><td><strong>middleware/</strong></td><td>Cross-cutting: auth, validation, errors</td><td><code>middleware/auth.js</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>The pattern in three layers</h3>
+    <span class="file-tag">routes/issues.js  (HTTP layer)</span>
+<pre>router.<span class="fn">post</span>(<span class="str">'/'</span>,
+  authenticate,
+  [
+    <span class="fn">body</span>(<span class="str">'title'</span>).<span class="fn">notEmpty</span>().<span class="fn">isLength</span>({ max: <span class="num">200</span> }),
+    <span class="fn">body</span>(<span class="str">'category_id'</span>).<span class="fn">isInt</span>(),
+    <span class="fn">body</span>(<span class="str">'latitude'</span>).<span class="fn">isFloat</span>(),
+    <span class="fn">body</span>(<span class="str">'longitude'</span>).<span class="fn">isFloat</span>(),
+    <span class="fn">body</span>(<span class="str">'photo_urls'</span>).<span class="fn">isArray</span>({ min: <span class="num">1</span>, max: <span class="num">5</span> }),
+  ],
+  validate,
+  <span class="kw">async</span> (req, res, next) =&gt; {
+    <span class="kw">const</span> issue = <span class="kw">await</span> issueService.<span class="fn">create</span>({ ...req.body, user_id: req.user.id });
+    res.<span class="fn">status</span>(<span class="num">201</span>).<span class="fn">json</span>({ issue });
+  }
+);</pre>
+
+    <span class="file-tag">services/issueService.js  (business logic)</span>
+<pre><span class="kw">async</span> <span class="fn">create</span>({ title, description, category_id, latitude, longitude, photo_urls, user_id }) {
+  <span class="kw">const</span> address = <span class="kw">await</span> <span class="fn">reverseGeocode</span>(latitude, longitude);   <span class="com">// side effect</span>
+
+  <span class="kw">const</span> [issue] = <span class="kw">await</span> <span class="fn">db</span>(<span class="str">'issues'</span>)
+    .<span class="fn">insert</span>({
+      title, description, category_id, status: <span class="str">'reported'</span>,
+      latitude, longitude, address,
+      photo_urls: <span class="fn">JSON.stringify</span>(photo_urls),
+      user_id,
+    })
+    .<span class="fn">returning</span>(<span class="str">'*'</span>);
+  <span class="kw">return</span> issue;
+}</pre>
+
+    <span class="file-tag">models/issue.js  (DB shape)</span>
+<pre><span class="kw">async</span> <span class="fn">findAll</span>({ category_id, status, bounds, page = <span class="num">1</span>, limit = <span class="num">50</span> }) {
+  <span class="kw">let</span> query = <span class="fn">db</span>(<span class="str">'issues'</span>)
+    .<span class="fn">join</span>(<span class="str">'categories'</span>, <span class="str">'issues.category_id'</span>, <span class="str">'categories.id'</span>)
+    .<span class="fn">select</span>(...)
+    .<span class="fn">orderBy</span>(<span class="str">'issues.created_at'</span>, <span class="str">'desc'</span>);
+
+  <span class="kw">if</span> (category_id) query = query.<span class="fn">where</span>(<span class="str">'issues.category_id'</span>, category_id);
+  <span class="kw">if</span> (bounds) {
+    <span class="kw">const</span> [sw_lat, sw_lng, ne_lat, ne_lng] = bounds.<span class="fn">split</span>(<span class="str">','</span>).<span class="fn">map</span>(Number);
+    query = query.<span class="fn">whereBetween</span>(<span class="str">'issues.latitude'</span>,  [sw_lat, ne_lat])
+                 .<span class="fn">whereBetween</span>(<span class="str">'issues.longitude'</span>, [sw_lng, ne_lng]);
+  }
+  ...
+}</pre>
+  </section>
+
+  <!-- ── Slide 7: Issue submission flow ──────────────── -->
+  <section id="issues-flow" class="slide">
+    <h2>7 · The "Report an issue" pipeline</h2>
+    <p class="subtitle">From a click in the browser to a row in <code>issues</code>.</p>
+
+    <div class="flow">
+      <div class="step">1. <strong>NewIssuePage</strong><br/>form state</div>
+      <span class="arrow">→</span>
+      <div class="step">2. <strong>PhotoUpload</strong><br/>direct → Cloudinary</div>
+      <span class="arrow">→</span>
+      <div class="step">3. <strong>LocationPicker</strong><br/>map click / GPS</div>
+      <span class="arrow">→</span>
+      <div class="step">4. <strong>POST /api/issues</strong><br/>JSON body w/ URLs &amp; coords</div>
+      <span class="arrow">→</span>
+      <div class="step">5. <strong>issueService.create</strong><br/>reverse-geocode + insert</div>
+      <span class="arrow">→</span>
+      <div class="step">6. <strong>Redirect to /map</strong></div>
+    </div>
+
+    <h3>Form submission glues everything together</h3>
+    <span class="file-tag">frontend/src/pages/NewIssuePage.jsx</span>
+<pre><span class="kw">const</span> <span class="fn">handleSubmit</span> = <span class="kw">async</span> (e) =&gt; {
+  e.<span class="fn">preventDefault</span>();
+  <span class="kw">if</span> (!<span class="fn">validateForm</span>()) <span class="kw">return</span>;
+
+  <span class="kw">await</span> issueAPI.<span class="fn">createIssue</span>({
+    title:        formData.title,
+    description:  formData.description,
+    category_id:  <span class="fn">parseInt</span>(formData.category_id),
+    latitude:     formData.location.lat,
+    longitude:    formData.location.lng,
+    photo_urls:   formData.photo_urls,    <span class="com">// already-uploaded Cloudinary URLs</span>
+  });
+  <span class="fn">navigate</span>(<span class="str">'/map'</span>);
+};</pre>
+
+    <h3>Reverse-geocoding happens server-side</h3>
+    <span class="file-tag">backend/src/utils/geocoding.js</span>
+<pre><span class="kw">async function</span> <span class="fn">reverseGeocode</span>(latitude, longitude) {
+  <span class="kw">try</span> {
+    <span class="kw">const</span> url = <span class="str">`https://maps.googleapis.com/maps/api/geocode/json`</span>
+      + <span class="str">`?latlng=</span>${latitude}<span class="str">,</span>${longitude}<span class="str">&key=</span>${config.googleMapsApiKey}<span class="str">&language=hr`</span>;
+    <span class="kw">const</span> response = <span class="kw">await</span> <span class="fn">fetch</span>(url);
+    <span class="kw">const</span> data     = <span class="kw">await</span> response.<span class="fn">json</span>();
+    <span class="kw">if</span> (data.status === <span class="str">'OK'</span> &amp;&amp; data.results.length &gt; <span class="num">0</span>)
+      <span class="kw">return</span> data.results[<span class="num">0</span>].formatted_address;
+    <span class="kw">return</span> <span class="str">`</span>${latitude.<span class="fn">toFixed</span>(<span class="num">6</span>)}<span class="str">, </span>${longitude.<span class="fn">toFixed</span>(<span class="num">6</span>)}<span class="str">`</span>;  <span class="com">// graceful fallback</span>
+  } <span class="kw">catch</span> (error) { <span class="kw">return</span> <span class="str">`</span>${latitude}<span class="str">, </span>${longitude}<span class="str">`</span>; }
+}</pre>
+
+    <div class="callout">
+      <strong>Why server-side?</strong> The Geocoding API key needs to stay private. Doing the lookup in <code>issueService.create</code> means the key never ships to the browser, and we get a stable, formatted address baked into the row at write time.
+    </div>
+  </section>
+
+  <!-- ── Slide 8: Admin status change ────────────────── -->
+  <section id="admin-flow" class="slide">
+    <h2>8 · Admin status changes &amp; the notification trigger</h2>
+    <p class="subtitle">One PATCH does three things atomically: update issue, append history, notify owner.</p>
+
+    <span class="file-tag">backend/src/services/adminService.js</span>
+<pre><span class="kw">async</span> <span class="fn">changeStatus</span>(issueId, { status, note }, adminId) {
+  <span class="kw">const</span> issue = <span class="kw">await</span> <span class="fn">db</span>(<span class="str">'issues'</span>).<span class="fn">where</span>(<span class="str">'id'</span>, issueId).<span class="fn">first</span>();
+  <span class="kw">if</span> (!issue) <span class="kw">throw</span> Object.<span class="fn">assign</span>(<span class="kw">new</span> Error(<span class="str">'Issue not found'</span>), { status: <span class="num">404</span> });
+
+  <span class="kw">const</span> oldStatus = issue.status;
+  <span class="kw">await</span> <span class="fn">db</span>(<span class="str">'issues'</span>).<span class="fn">where</span>(<span class="str">'id'</span>, issueId).<span class="fn">update</span>({ status, updated_at: <span class="kw">new</span> <span class="fn">Date</span>() });
+
+  <span class="kw">const</span> historyEntry = <span class="kw">await</span> StatusHistory.<span class="fn">create</span>({
+    issue_id: issueId, old_status: oldStatus, new_status: status,
+    changed_by: adminId, note: note || <span class="kw">null</span>,
+  });
+
+  <span class="com">// Build a Croatian-localized message and store it for the citizen</span>
+  <span class="kw">const</span> statusLabels = { reported: <span class="str">'Prijavljeno'</span>, in_progress: <span class="str">'U tijeku'</span>,
+                        resolved: <span class="str">'Riješeno'</span>, rejected: <span class="str">'Odbijeno'</span> };
+  <span class="kw">await</span> Notification.<span class="fn">create</span>({
+    user_id:  issue.user_id,
+    issue_id: issueId,
+    type:     <span class="str">'status_change'</span>,
+    message:  <span class="str">`Status vašeg problema "</span>${issue.title}<span class="str">" promijenjen u: </span>${statusLabels[status]}<span class="str">`</span>,
+  });
+
+  <span class="kw">return</span> { issue: { id: issueId, status }, history_entry: historyEntry };
+}</pre>
+
+    <h3>Citizen polls for the new notification</h3>
+    <span class="file-tag">frontend/src/context/NotificationContext.jsx</span>
+<pre><span class="kw">useEffect</span>(() =&gt; {
+  <span class="fn">fetchNotifications</span>();
+  <span class="kw">const</span> interval = <span class="fn">setInterval</span>(fetchNotifications, <span class="num">60000</span>);  <span class="com">// poll every 60s</span>
+  <span class="kw">return</span> () =&gt; <span class="fn">clearInterval</span>(interval);
+}, [fetchNotifications]);
+
+<span class="kw">const</span> <span class="fn">markAsRead</span> = <span class="kw">async</span> (id) =&gt; {
+  <span class="kw">await</span> api.<span class="fn">patch</span>(<span class="str">`/notifications/</span>${id}<span class="str">/read`</span>);
+  <span class="fn">setNotifications</span>(prev =&gt; prev.<span class="fn">map</span>(n =&gt; n.id === id ? { ...n, is_read: <span class="kw">true</span> } : n));
+  <span class="fn">setUnreadCount</span>(prev =&gt; Math.<span class="fn">max</span>(<span class="num">0</span>, prev - <span class="num">1</span>));
+};</pre>
+
+    <div class="callout warn">
+      <strong>Polling, not WebSockets.</strong> The 60-second interval is a deliberately simple choice for this app's traffic level — it costs one cheap query per minute per active citizen and avoids the operational complexity of long-lived connections.
+    </div>
+  </section>
+
+  <!-- ── Slide 9: Frontend shell ─────────────────────── -->
+  <section id="frontend-shell" class="slide">
+    <h2>9 · Frontend shell — App.jsx + contexts</h2>
+    <p class="subtitle">Two providers wrap every route, and two route-guards gate the protected ones.</p>
+
+    <span class="file-tag">frontend/src/App.jsx</span>
+<pre>&lt;<span class="tag">BrowserRouter</span>&gt;
+  &lt;<span class="tag">AuthProvider</span>&gt;                       <span class="com">// fetches /auth/me on mount</span>
+    &lt;<span class="tag">NotificationProvider</span>&gt;            <span class="com">// polls /notifications every 60s</span>
+      &lt;<span class="tag">Layout</span>&gt;
+        &lt;<span class="tag">Routes</span>&gt;
+          &lt;<span class="tag">Route</span> <span class="attr">path</span>=<span class="str">"/"</span>      <span class="attr">element</span>={&lt;<span class="tag">HomePage</span>/&gt;} /&gt;
+          &lt;<span class="tag">Route</span> <span class="attr">path</span>=<span class="str">"/map"</span>   <span class="attr">element</span>={&lt;<span class="tag">MapPage</span>/&gt;} /&gt;
+          &lt;<span class="tag">Route</span> <span class="attr">path</span>=<span class="str">"/login"</span> <span class="attr">element</span>={&lt;<span class="tag">Login</span>/&gt;} /&gt;
+          &lt;<span class="tag">Route</span> <span class="attr">path</span>=<span class="str">"/issues/new"</span>
+                 <span class="attr">element</span>={&lt;<span class="tag">ProtectedRoute</span>&gt;&lt;<span class="tag">NewIssuePage</span>/&gt;&lt;/<span class="tag">ProtectedRoute</span>&gt;} /&gt;
+          &lt;<span class="tag">Route</span> <span class="attr">path</span>=<span class="str">"/admin/*"</span>
+                 <span class="attr">element</span>={&lt;<span class="tag">AdminRoute</span>&gt;...&lt;/<span class="tag">AdminRoute</span>&gt;} /&gt;
+        &lt;/<span class="tag">Routes</span>&gt;
+      &lt;/<span class="tag">Layout</span>&gt;
+    &lt;/<span class="tag">NotificationProvider</span>&gt;
+  &lt;/<span class="tag">AuthProvider</span>&gt;
+&lt;/<span class="tag">BrowserRouter</span>&gt;</pre>
+
+    <h3>AuthContext: the source of truth for "who is logged in?"</h3>
+    <span class="file-tag">frontend/src/context/AuthContext.jsx</span>
+<pre><span class="kw">export function</span> <span class="fn">AuthProvider</span>({ children }) {
+  <span class="kw">const</span> [user, setUser]       = <span class="fn">useState</span>(<span class="kw">null</span>);
+  <span class="kw">const</span> [loading, setLoading] = <span class="fn">useState</span>(<span class="kw">true</span>);
+
+  <span class="com">// On every full page load, ask the backend who we are (cookie travels automatically).</span>
+  <span class="fn">useEffect</span>(() =&gt; {
+    api.<span class="fn">get</span>(<span class="str">'/auth/me'</span>)
+      .<span class="fn">then</span>(res  =&gt; <span class="fn">setUser</span>(res.data.user))
+      .<span class="fn">catch</span>(()  =&gt; <span class="fn">setUser</span>(<span class="kw">null</span>))
+      .<span class="fn">finally</span>(()=&gt; <span class="fn">setLoading</span>(<span class="kw">false</span>));
+  }, []);
+
+  <span class="kw">const</span> <span class="fn">login</span>    = <span class="kw">async</span> (email, password) =&gt; { ... <span class="fn">setUser</span>(res.data.user); };
+  <span class="kw">const</span> <span class="fn">register</span> = <span class="kw">async</span> (data)            =&gt; { ... };
+  <span class="kw">const</span> <span class="fn">logout</span>   = <span class="kw">async</span> ()                =&gt; { <span class="kw">await</span> api.<span class="fn">post</span>(<span class="str">'/auth/logout'</span>); <span class="fn">setUser</span>(<span class="kw">null</span>); };
+
+  <span class="kw">return</span> &lt;<span class="tag">AuthContext.Provider</span> <span class="attr">value</span>={{ user, loading, login, register, logout }}&gt;{children}&lt;/<span class="tag">AuthContext.Provider</span>&gt;;
+}</pre>
+
+    <h3>Route guards short-circuit unauthorized navigation</h3>
+    <span class="file-tag">frontend/src/components/AdminRoute.jsx</span>
+<pre><span class="kw">export default function</span> <span class="fn">AdminRoute</span>({ children }) {
+  <span class="kw">const</span> { user, loading } = <span class="fn">useAuth</span>();
+  <span class="kw">if</span> (loading)              <span class="kw">return</span> &lt;<span class="tag">Spinner</span>/&gt;;
+  <span class="kw">if</span> (!user)                <span class="kw">return</span> &lt;<span class="tag">Navigate</span> <span class="attr">to</span>=<span class="str">"/login"</span> <span class="attr">replace</span>/&gt;;
+  <span class="kw">if</span> (user.role !== <span class="str">'admin'</span>) <span class="kw">return</span> &lt;<span class="tag">Navigate</span> <span class="attr">to</span>=<span class="str">"/dashboard"</span> <span class="attr">replace</span>/&gt;;
+  <span class="kw">return</span> children;
+}</pre>
+
+    <h3>Axios is preconfigured to send the cookie</h3>
+    <span class="file-tag">frontend/src/services/api.js</span>
+<pre><span class="kw">const</span> api = axios.<span class="fn">create</span>({
+  baseURL: <span class="kw">import</span>.meta.env.VITE_API_URL || <span class="str">'http://localhost:3001/api'</span>,
+  withCredentials: <span class="kw">true</span>,         <span class="com">// ← without this, the JWT cookie is dropped</span>
+  headers: { <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span> },
+});</pre>
+  </section>
+
+  <!-- ── Slide 10: Map ───────────────────────────────── -->
+  <section id="map" class="slide">
+    <h2>10 · Map &amp; markers</h2>
+    <p class="subtitle">Three small components compose into the public map view.</p>
+
+    <h3>Map.jsx — thin wrapper around Google Maps</h3>
+    <span class="file-tag">frontend/src/components/Map.jsx</span>
+<pre><span class="kw">const</span> defaultCenter = { lat: <span class="num">45.815</span>, lng: <span class="num">15.982</span> };  <span class="com">// Zagreb</span>
+
+<span class="kw">export default function</span> <span class="fn">Map</span>({ children, center, zoom, onClick, onBoundsChanged }) {
+  <span class="kw">const</span> { isLoaded } = <span class="fn">useJsApiLoader</span>({
+    googleMapsApiKey: <span class="kw">import</span>.meta.env.VITE_GOOGLE_MAPS_API_KEY || <span class="str">''</span>,
+  });
+  <span class="kw">if</span> (!isLoaded) <span class="kw">return</span> &lt;<span class="tag">Loading</span>/&gt;;
+  <span class="kw">return</span> (
+    &lt;<span class="tag">GoogleMap</span> <span class="attr">center</span>={center||defaultCenter} <span class="attr">zoom</span>={zoom||<span class="num">13</span>}
+               <span class="attr">onClick</span>={onClick} <span class="attr">onBoundsChanged</span>={onBoundsChanged}&gt;
+      {children}
+    &lt;/<span class="tag">GoogleMap</span>&gt;
+  );
+}</pre>
+
+    <h3>IssueMarker.jsx — color encodes status</h3>
+    <span class="file-tag">frontend/src/components/IssueMarker.jsx</span>
+<pre><span class="kw">const</span> STATUS_COLORS = {
+  reported:    <span class="str">'#F57C00'</span>,   <span class="com">// orange</span>
+  in_progress: <span class="str">'#1976D2'</span>,   <span class="com">// blue</span>
+  resolved:    <span class="str">'#4CAF50'</span>,   <span class="com">// green</span>
+  rejected:    <span class="str">'#9E9E9E'</span>,   <span class="com">// gray</span>
+};
+
+<span class="kw">function</span> <span class="fn">buildIcon</span>(status) {
+  <span class="kw">const</span> color = STATUS_COLORS[status] || <span class="str">'#F57C00'</span>;
+  <span class="kw">const</span> svg   = <span class="str">`&lt;svg ...&gt;&lt;path d="..." fill="</span>${color}<span class="str">"/&gt;...&lt;/svg&gt;`</span>;
+  <span class="kw">return</span> { url: <span class="str">`data:image/svg+xml;charset=UTF-8,</span>${<span class="fn">encodeURIComponent</span>(svg)}<span class="str">`</span> };
+}
+
+<span class="kw">export default function</span> <span class="fn">IssueMarker</span>({ issue, onClick }) {
+  <span class="kw">return</span> &lt;<span class="tag">Marker</span>
+    <span class="attr">position</span>={{ lat: <span class="fn">parseFloat</span>(issue.latitude), lng: <span class="fn">parseFloat</span>(issue.longitude) }}
+    <span class="attr">icon</span>={<span class="fn">buildIcon</span>(issue.status)}
+    <span class="attr">onClick</span>={() =&gt; <span class="fn">onClick</span>(issue)} /&gt;;
+}</pre>
+
+    <h3>MapPage stitches it all together</h3>
+    <span class="file-tag">frontend/src/pages/MapPage.jsx (excerpt)</span>
+<pre><span class="kw">const</span> <span class="fn">fetchIssues</span> = <span class="fn">useCallback</span>(<span class="kw">async</span> () =&gt; {
+  <span class="kw">const</span> params = {};
+  <span class="kw">if</span> (filters.category_id) params.category_id = filters.category_id;
+  <span class="kw">if</span> (filters.status)      params.status      = filters.status;
+  <span class="kw">if</span> (filters.date_from)   params.date_from   = filters.date_from;
+  <span class="kw">if</span> (filters.date_to)     params.date_to     = filters.date_to;
+  <span class="kw">const</span> res = <span class="kw">await</span> issueAPI.<span class="fn">fetchIssues</span>(params);
+  <span class="fn">setIssues</span>(res.data.issues || []);
+}, [filters]);
+
+&lt;<span class="tag">Map</span>&gt;
+  {issues.<span class="fn">map</span>(issue =&gt; (
+    &lt;<span class="tag">IssueMarker</span> <span class="attr">key</span>={issue.id} <span class="attr">issue</span>={issue} <span class="attr">onClick</span>={handleMarkerClick}/&gt;
+  ))}
+  {selectedIssue &amp;&amp; (
+    &lt;<span class="tag">InfoWindow</span> <span class="attr">position</span>={...} <span class="attr">onCloseClick</span>={handleInfoClose}&gt;
+      &lt;<span class="tag">IssueInfoCard</span> <span class="attr">issue</span>={selectedIssue} <span class="attr">onDetailsClick</span>={handleDetailsClick}/&gt;
+    &lt;/<span class="tag">InfoWindow</span>&gt;
+  )}
+&lt;/<span class="tag">Map</span>&gt;</pre>
+  </section>
+
+  <!-- ── Slide 11: Photo upload ──────────────────────── -->
+  <section id="photo-upload" class="slide">
+    <h2>11 · Photo upload — Cloudinary direct upload</h2>
+    <p class="subtitle">The browser talks to Cloudinary itself; the backend never sees the bytes.</p>
+
+    <span class="file-tag">frontend/src/services/cloudinaryService.js</span>
+<pre><span class="kw">const</span> CLOUD_NAME    = <span class="kw">import</span>.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+<span class="kw">const</span> UPLOAD_PRESET = <span class="kw">import</span>.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+<span class="kw">export async function</span> <span class="fn">uploadImage</span>(file) {
+  <span class="kw">const</span> formData = <span class="kw">new</span> <span class="fn">FormData</span>();
+  formData.<span class="fn">append</span>(<span class="str">'file'</span>, file);
+  formData.<span class="fn">append</span>(<span class="str">'upload_preset'</span>, UPLOAD_PRESET);   <span class="com">// unsigned preset</span>
+
+  <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">fetch</span>(
+    <span class="str">`https://api.cloudinary.com/v1_1/</span>${CLOUD_NAME}<span class="str">/image/upload`</span>,
+    { method: <span class="str">'POST'</span>, body: formData },
+  );
+  <span class="kw">if</span> (!res.ok) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">'Image upload failed'</span>);
+  <span class="kw">return</span> (<span class="kw">await</span> res.<span class="fn">json</span>()).secure_url;     <span class="com">// just the URL, that's all the API needs</span>
+}</pre>
+
+    <h3>PhotoUpload.jsx validates &amp; tracks state</h3>
+    <span class="file-tag">frontend/src/components/PhotoUpload.jsx (key bits)</span>
+<pre><span class="kw">const</span> MAX_FILE_SIZE = <span class="num">5</span> * <span class="num">1024</span> * <span class="num">1024</span>;   <span class="com">// 5 MB</span>
+<span class="kw">const</span> MAX_PHOTOS    = <span class="num">5</span>;
+
+<span class="kw">const</span> <span class="fn">handleFileChange</span> = <span class="kw">async</span> (e) =&gt; {
+  <span class="kw">const</span> files = Array.<span class="fn">from</span>(e.target.files || []);
+  <span class="kw">if</span> (files.length &gt; remaining) <span class="kw">return</span> <span class="fn">onError</span>(<span class="str">`Možete dodati još </span>${remaining}<span class="str">`</span>);
+
+  <span class="kw">for</span> (<span class="kw">const</span> file <span class="kw">of</span> files) {
+    <span class="kw">if</span> (!file.type.<span class="fn">startsWith</span>(<span class="str">'image/'</span>)) <span class="kw">return</span> <span class="fn">onError</span>(<span class="str">'Datoteka mora biti slika'</span>);
+    <span class="kw">if</span> (file.size &gt; MAX_FILE_SIZE)        <span class="kw">return</span> <span class="fn">onError</span>(<span class="str">'Slika ne smije biti veca od 5MB'</span>);
+  }
+  <span class="kw">const</span> uploaded = [];
+  <span class="kw">for</span> (<span class="kw">const</span> file <span class="kw">of</span> files) uploaded.<span class="fn">push</span>(<span class="kw">await</span> <span class="fn">uploadImage</span>(file));
+  <span class="fn">onChange</span>([...photos, ...uploaded]);
+};</pre>
+
+    <h3>The backend simply validates URLs</h3>
+    <span class="file-tag">backend/src/routes/issues.js</span>
+<pre><span class="fn">body</span>(<span class="str">'photo_urls'</span>).<span class="fn">isArray</span>({ min: <span class="num">1</span>, max: <span class="num">5</span> })
+  .<span class="fn">withMessage</span>(<span class="str">'Between 1 and 5 photos required'</span>),
+<span class="fn">body</span>(<span class="str">'photo_urls.*'</span>).<span class="fn">isURL</span>().<span class="fn">withMessage</span>(<span class="str">'Each photo must be a valid URL'</span>),</pre>
+  </section>
+
+  <!-- ── Slide 12: Statistics ────────────────────────── -->
+  <section id="statistics" class="slide">
+    <h2>12 · Admin statistics — one query, four insights</h2>
+    <p class="subtitle">Aggregations done in PostgreSQL, rendered with Recharts.</p>
+
+    <span class="file-tag">backend/src/services/statisticsService.js (excerpt)</span>
+<pre><span class="com">// 1) Counts by status</span>
+<span class="kw">const</span> byStatus = <span class="kw">await</span> <span class="fn">db</span>(<span class="str">'issues'</span>).<span class="fn">select</span>(<span class="str">'status'</span>).<span class="fn">count</span>(<span class="str">'id as count'</span>).<span class="fn">groupBy</span>(<span class="str">'status'</span>);
+
+<span class="com">// 2) Counts by category — joined for human-readable names</span>
+<span class="kw">const</span> byCategory = <span class="kw">await</span> <span class="fn">db</span>(<span class="str">'issues'</span>)
+  .<span class="fn">join</span>(<span class="str">'categories'</span>, <span class="str">'issues.category_id'</span>, <span class="str">'categories.id'</span>)
+  .<span class="fn">select</span>(<span class="str">'categories.name as category_name'</span>)
+  .<span class="fn">count</span>(<span class="str">'issues.id as count'</span>)
+  .<span class="fn">groupBy</span>(<span class="str">'categories.name'</span>)
+  .<span class="fn">orderBy</span>(<span class="str">'count'</span>, <span class="str">'desc'</span>);
+
+<span class="com">// 3) Monthly trend, last 6 months</span>
+<span class="kw">const</span> monthlyTrend = <span class="kw">await</span> <span class="fn">db</span>(<span class="str">'issues'</span>)
+  .<span class="fn">select</span>(db.<span class="fn">raw</span>(<span class="str">"to_char(created_at, 'YYYY-MM') as month"</span>))
+  .<span class="fn">count</span>(<span class="str">'id as count'</span>)
+  .<span class="fn">where</span>(<span class="str">'created_at'</span>, <span class="str">'&gt;='</span>, sixMonthsAgo)
+  .<span class="fn">groupByRaw</span>(<span class="str">"to_char(created_at, 'YYYY-MM')"</span>);
+
+<span class="com">// 4) Average resolution time in hours, joining status_history</span>
+<span class="kw">const</span> avgResolution = <span class="kw">await</span> <span class="fn">db</span>(<span class="str">'status_history'</span>)
+  .<span class="fn">join</span>(<span class="str">'issues'</span>, <span class="str">'status_history.issue_id'</span>, <span class="str">'issues.id'</span>)
+  .<span class="fn">where</span>(<span class="str">'status_history.new_status'</span>, <span class="str">'resolved'</span>)
+  .<span class="fn">select</span>(db.<span class="fn">raw</span>(
+    <span class="str">"avg(extract(epoch from (status_history.created_at - issues.created_at)) / 3600) as avg_hours"</span>
+  )).<span class="fn">first</span>();</pre>
+
+    <p>The frontend's <code>AdminStatisticsPage</code> consumes the JSON and feeds it to four Recharts components in <code>components/charts/</code> (<code>CategoryChart</code>, <code>MonthlyTrendChart</code>, <code>StatusDistributionChart</code>, <code>TopLocationsTable</code>).</p>
+  </section>
+
+  <!-- ── Slide 13: Most useful components ────────────── -->
+  <section id="key-components" class="slide">
+    <h2>13 · Most useful components to read first</h2>
+    <p class="subtitle">If you're new to the codebase, open these files in this order.</p>
+
+    <table>
+      <thead><tr><th>#</th><th>File</th><th>Why it's worth reading first</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>backend/src/app.js</code></td><td>The single map of every URL the API serves.</td></tr>
+        <tr><td>2</td><td><code>backend/src/middleware/auth.js</code></td><td>Tells you what <code>req.user</code> looks like everywhere downstream.</td></tr>
+        <tr><td>3</td><td><code>backend/src/services/issueService.js</code></td><td>The "create issue" flow including reverse geocoding.</td></tr>
+        <tr><td>4</td><td><code>backend/src/services/adminService.js</code></td><td>Shows the multi-table side effect (issue + history + notification).</td></tr>
+        <tr><td>5</td><td><code>backend/src/models/issue.js</code></td><td>Reference for filterable list query &amp; detail aggregation.</td></tr>
+        <tr><td>6</td><td><code>frontend/src/App.jsx</code></td><td>Route table = sitemap of the entire SPA.</td></tr>
+        <tr><td>7</td><td><code>frontend/src/context/AuthContext.jsx</code></td><td>How user state propagates to every page.</td></tr>
+        <tr><td>8</td><td><code>frontend/src/services/api.js</code></td><td>One axios instance, used by everything; cookie behavior lives here.</td></tr>
+        <tr><td>9</td><td><code>frontend/src/pages/NewIssuePage.jsx</code></td><td>Best end-to-end illustration: composes Map + LocationPicker + PhotoUpload + API.</td></tr>
+        <tr><td>10</td><td><code>frontend/src/pages/MapPage.jsx</code></td><td>Read-side equivalent: filters → query → markers.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout success">
+      <strong>Reading order matters.</strong> Once you've followed <em>one</em> POST request from <code>NewIssuePage.jsx</code> → <code>api.js</code> → <code>routes/issues.js</code> → <code>issueService.create</code> → DB and back, every other endpoint in the app will look familiar.
+    </div>
+  </section>
+
+  <!-- ── Slide 14: End-to-end request map ────────────── -->
+  <section id="requests" class="slide">
+    <h2>14 · End-to-end request map</h2>
+    <p class="subtitle">A glance at how each user role exercises the system.</p>
+
+    <h3>Citizen — submitting a report</h3>
+    <div class="flow">
+      <div class="step">Click "Prijavi"</div>
+      <span class="arrow">→</span>
+      <div class="step">PhotoUpload → Cloudinary</div>
+      <span class="arrow">→</span>
+      <div class="step">POST /api/issues</div>
+      <span class="arrow">→</span>
+      <div class="step">authenticate</div>
+      <span class="arrow">→</span>
+      <div class="step">validate</div>
+      <span class="arrow">→</span>
+      <div class="step">issueService.create</div>
+      <span class="arrow">→</span>
+      <div class="step">reverseGeocode</div>
+      <span class="arrow">→</span>
+      <div class="step">INSERT issues</div>
+    </div>
+
+    <h3>Citizen — browsing the map</h3>
+    <div class="flow">
+      <div class="step">/map mounts</div>
+      <span class="arrow">→</span>
+      <div class="step">GET /api/categories</div>
+      <span class="arrow">→</span>
+      <div class="step">GET /api/issues?filters</div>
+      <span class="arrow">→</span>
+      <div class="step">Issue.findAll (joined)</div>
+      <span class="arrow">→</span>
+      <div class="step">IssueMarker grid</div>
+    </div>
+
+    <h3>Admin — resolving an issue</h3>
+    <div class="flow">
+      <div class="step">/admin/issues/:id</div>
+      <span class="arrow">→</span>
+      <div class="step">PATCH /api/admin/issues/:id/status</div>
+      <span class="arrow">→</span>
+      <div class="step">authenticate + requireRole</div>
+      <span class="arrow">→</span>
+      <div class="step">adminService.changeStatus</div>
+      <span class="arrow">→</span>
+      <div class="step">UPDATE + status_history INSERT + notification INSERT</div>
+    </div>
+
+    <h3>Citizen — receiving the news</h3>
+    <div class="flow">
+      <div class="step">NotificationContext interval (60s)</div>
+      <span class="arrow">→</span>
+      <div class="step">GET /api/notifications</div>
+      <span class="arrow">→</span>
+      <div class="step">unreadCount updates</div>
+      <span class="arrow">→</span>
+      <div class="step">NotificationBell badge re-renders</div>
+    </div>
+
+    <div class="callout">
+      <strong>The whole app, in one sentence.</strong> A React SPA reads and writes a single Express API guarded by JWT cookies; that API uses Knex to talk to PostgreSQL, calls Google for reverse geocoding, lets the browser upload photos straight to Cloudinary, and records every admin status change as both a history row and a citizen-facing notification.
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

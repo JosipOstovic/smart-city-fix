@@ -1,0 +1,243 @@
+Opis aplikacije: Aplikacija omogućuje registriranim korisnicima da prijavljuju probleme u gradu putem Google Maps-a. Korisnik uslika problem i na temelju svoje lokacije dodaje marker na kartu s fotografijom, vrstom problema i adresom. Prijave se šalju gradskim službama (admin panel) koje rješavaju problem. Korisnici mogu filtrirati probleme po kategoriji te pratiti status prijave (prijavljeno, u tijeku, riješeno).
+
+Tehnologije: React za frontend, NodeJS za backend, PostgreSQL za bazu, slike se mogu spremati lokalno u folder ili bolje na Firebase Storage/Cloudinary (ili ako može i u postgresql, kako je lakše na temelju ovih dolje specifikacija)
+
+Uloge korisnika:
+Aplikacija bi imala 3 tipa korisnika:
+1. Gost
+	-vidi javnu kartu problema
+	-može filtrirati probleme
+	-ne može dodavati prijave
+2. Registrirani korisnik/građanin
+	-može prijaviti problem
+	-može vidjeti svoje prijave
+	-može komentirati ili pratiti status
+3. Admin/gradska služba
+	-vidi sve prijave
+	-mijenja status problema
+	-briše/uređuje prijave
+	-vidi statistiku
+
+Glavni ekrani aplikacija:
+1. Početna stranica
+Ruta: /
+Sadržaj:
+	-kratki opis aplikacije
+	-gumb “Prijavi problem”
+	-gumb “Pogledaj kartu”
+	-statistika: broj prijava, riješenih problema, aktivnih problema
+
+2. Karta problema
+Ruta: /map
+Sadržaj:
+	-Google Maps karta preko cijele stranice
+	-markeri za probleme
+	-filteri sa strane ili iznad karte:
+		-kategorija
+		-status
+		-datum
+		-kvart/lokacija
+	-klik na marker otvara info karticu
+Marker prikazuje:
+	-naziv problema
+	-kategoriju
+	-status
+	-sliku
+	-gumb "Detalji"
+
+3. Detalji problema
+Ruta: /issues/:id
+Sadržaj:
+	-naslov problema
+	-opis
+	-kategorija
+	-status
+	-lokacija na maloj karti
+	-fotografija
+	-datum prijave
+	-korisnik koji je prijavio
+	-komentari/ažuriranja statusa
+Primjer statusa: Prijavljeno -> U tijeku -> Riješeno
+Može se dodati i timeline npr: 
+04.05.2026. Problem prijavljen
+05.05.2026. Status promijenjen u "U tijeku"
+07.05.2026. Problem riješen
+
+4. Login
+Ruta: /login
+Sadržaj:
+	-email
+	-lozinka
+	-link na registraciju
+Nakon prijave: 
+	-obični korisnik ide na /dashboard
+	-admin ide na /admin
+
+5. Register
+Ruta: /register
+Polja:
+	-ime
+	-prezime
+	-email
+	-lozinka
+	-grad/općina opcionalno
+U bazi korisnik dobiva role: user
+Admina mogu postaviti ručno u bazi
+
+6. Korisnički dashboard
+Ruta: /dashboard
+Sadržaj:
+	-moje prijave
+	-broj prijavljenih problema
+	-broj riješenih problema
+	-gumb “Nova prijava”
+	-tablica ili kartice prijava
+Primjer: 
+Moje prijave:
+	-Rupa na cesti — Prijavljeno
+	-Smeće kod parka — U tijeku
+	-Slomljena klupa — Riješeno
+
+7. Dodavanje nove prijave
+Ruta: /issues/new
+Sadržaj forme:
+	-naslov problema
+	-opis
+	-kategorija
+	-fotografija
+	-lokacija
+Lokaciju mogu riješiti na dva načina:
+Opcija A- korisnik klikne na kartu i marker se postavi na tu lokaciju
+Opcija B- koristi moju trenutnu lokaciju
+Možda je najbolje imati obje opcije
+
+8. Admin dashboard
+Ruta: /admin
+Sadržaj:
+	-broj svih prijava
+	-broj prijavljenih
+	-broj u tijeku
+	-broj riješenih
+	-najčešće kategorije
+	-zadnje prijave
+Ovo može izgledati kao pravi panel gradske službe
+
+9. Admin pregled svih prijava
+Ruta: /admin/issues
+Sadržaj:
+	-tablica svih problema
+	-filter po statusu
+	-filter po kategoriji
+	-pretraga po nazivu
+	-akcije:
+		-pregled
+		-promjena statusa
+		-brisanje
+		-dodavanje napomene
+Tablica: 
+Naslov | Kategorija | Status | Datum | Korisnik | Akcije
+
+10. Admin detalji prijave
+Ruta: /admin/issues/:id
+Sadržaj:
+	-svi podaci o prijavi
+	-slika
+	-lokacija
+	-promjena statusa
+	-interna napomena admina
+	-povijest promjena
+Admin može promijeniti status:
+	-Prijavljeno
+	-U tijeku
+	-Riješeno
+	-Odbijeno
+
+11. Statistika
+Ruta: /admin/statistics
+Tu mogu prikazati:
+	-broj prijava po kategoriji
+	-broj prijava po statusu
+	-broj prijava po mjesecima
+	-najproblematičnije lokacije
+	-prosječno vrijeme rješavanja
+Za grafove: Chart.js i Recharts možda
+
+
+Predložena navigacija:
+Za gosta:
+	-Početna
+	-Karta problema
+	-Login
+	-Registracija
+Za registriranog korisnika:
+	-Početna
+	-Karta problema
+	-Moje prijave
+	-Nova prijava
+	-Profil
+	-Odjava
+Za admina:
+	-Admin dashboard
+	-Sve prijave
+	-Karta problema
+	-Statistika
+	-Odjava 
+
+Za PostgreSQL tablice, minimalno bi onda imao:
+	-users
+	-issues
+	-categories
+	-issue_images
+	-status_history
+	-comments
+users tablica bi imala ove podatke:
+	-id
+	-first_name
+	-last_name
+	-email
+	-password_hash
+	-role
+	-created_at
+issues tablica bi imala ove podatke:
+	-id
+	-title
+	-description
+	-category_id
+	-status
+	-latitude
+	-longitude
+	-address
+	-user_id
+	-created_at
+	-updated_at
+categories tablica bi imala ove podatke:
+	-id
+	-name
+	-icon
+Primjeri kategorija:
+	-Rupa na cesti
+	-Javna rasvjeta
+	-Smeće
+	-Prometni znak
+	-Vandalizam
+	-Zelene površine
+	-Ostalo
+issue_images tablica bi imala ove podatke:
+	-id
+	-issue_id
+	-image_url
+	-created_at
+status_history tablica bi imala ove podatke:
+	-id
+	-issue_id
+	-old_status
+	-new_status
+	-changed_by
+	-note
+	-created_at
+comments tablica bi imala ove podatke:
+	-id
+	-issue_id
+	-user_id
+	-content
+	-created_at
