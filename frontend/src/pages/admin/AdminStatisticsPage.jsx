@@ -1,21 +1,25 @@
-import { useState, useEffect } from 'react';
-import CategoryChart from '../../components/charts/CategoryChart';
-import MonthlyTrendChart from '../../components/charts/MonthlyTrendChart';
-import StatusDistributionChart from '../../components/charts/StatusDistributionChart';
-import TopLocationsTable from '../../components/charts/TopLocationsTable';
+import api from "../../services/api";
+import { useState, useEffect } from "react";
+import CategoryChart from "../../components/charts/CategoryChart";
+import MonthlyTrendChart from "../../components/charts/MonthlyTrendChart";
+import StatusDistributionChart from "../../components/charts/StatusDistributionChart";
+import TopLocationsTable from "../../components/charts/TopLocationsTable";
 
 export default function AdminStatisticsPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/admin/statistics', { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        setStats(data);
+    api
+      .get("/admin/statistics")
+      .then((response) => {
+        setStats(response.data);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setStats(null);
+        setLoading(false);
+      });
   }, []);
 
   if (loading) {
@@ -46,15 +50,21 @@ export default function AdminStatisticsPage() {
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-500">Prijavljeno</p>
-          <p className="text-2xl font-bold text-orange-500">{stats.by_status.reported}</p>
+          <p className="text-2xl font-bold text-orange-500">
+            {stats.by_status.reported}
+          </p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-500">U tijeku</p>
-          <p className="text-2xl font-bold text-blue-600">{stats.by_status.in_progress}</p>
+          <p className="text-2xl font-bold text-blue-600">
+            {stats.by_status.in_progress}
+          </p>
         </div>
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-500">Riješeno</p>
-          <p className="text-2xl font-bold text-green-600">{stats.by_status.resolved}</p>
+          <p className="text-2xl font-bold text-green-600">
+            {stats.by_status.resolved}
+          </p>
         </div>
       </div>
 
@@ -62,7 +72,9 @@ export default function AdminStatisticsPage() {
       {stats.avg_resolution_hours !== null && (
         <div className="bg-white rounded-lg shadow p-4 mb-6">
           <p className="text-sm text-gray-500">Prosječno vrijeme rješavanja</p>
-          <p className="text-xl font-semibold">{stats.avg_resolution_hours} sati</p>
+          <p className="text-xl font-semibold">
+            {stats.avg_resolution_hours} sati
+          </p>
         </div>
       )}
 
